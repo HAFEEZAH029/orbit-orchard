@@ -1,40 +1,98 @@
 import {createGame,stepGame,switchRing,dash,RADII,TARGET} from './game-state.js';
-import {PLATFORM,getUser,signIn} from './platform.js';
+import {PLATFORM,getUser,signIn,getLeaderboard,submitScore} from './platform.js';
+import {harvestStats} from './scoring.js';
 const $=id=>document.getElementById(id);
 let mode='loading',game=createGame(),user=null,hero,camera,renderer;
 const held=new Set();let refreshNumber=0;
+let boardRequest=0,savingRun=null;
 const storageKey=()=>`orbit-orchard:best:${user?.id??'guest'}`;
 function best(){try{const v=JSON.parse(localStorage.getItem(storageKey()));return v&&Number.isFinite(v.seeds)&&Number.isFinite(v.time)?v:null;}catch{return null;}}
-function showBest(){const b=best();$('best').textContent=b?`${b.seeds}/${TARGET} · ${b.time.toFixed(1)}s`:'Your first harvest awaits';}
+function showBest(){const b=best();$('best').textContent=b?`${b.score??harvestStats({collected:b.seeds,elapsed:b.time}).score} points · ${b.seeds}/${TARGET} seeds · ${b.time.toFixed(1)}s`:'Your first harvest awaits';}
 function saveBest(){
-  const value={seeds:game.collected,time:Math.round(game.elapsed*10)/10},old=best();
-  if(!old||value.seeds>old.seeds||(value.seeds===old.seeds&&value.time<old.time)){try{localStorage.setItem(storageKey(),JSON.stringify(value));}catch{/* Storage is optional. */}}
+  const value=harvestStats(game),old=best();
+  const oldScore=old?(old.score??harvestStats({collected:old.seeds,elapsed:old.time}).score):-1;
+  if(!old||value.score>oldScore||(value.score===oldScore&&value.time<old.time)){try{localStorage.setItem(storageKey(),JSON.stringify(value));}catch{/* Storage is optional. */}}
   showBest();
 }
 function updateHud(){
   $('harvest').textContent=`${game.collected} / ${TARGET}`;$('time').textContent=`${Math.ceil(game.time)}s`;
   $('health').textContent='♥ '.repeat(game.health).trim()||'—';$('dash-status').textContent=game.cooldown>0?`${game.cooldown.toFixed(1)}s`:'Ready';
 }
-function start(){game=createGame();mode='running';held.clear();document.body.classList.add('playing');$('intro').hidden=true;$('modal').hidden=true;$('hud').hidden=false;$('touch').hidden=false;$('pause').focus();updateHud();resize();}
+function start(){game=createGame();mode='running';held.clear();boardRequest++;$('leaderboard-modal').hidden=true;$('retry-score').hidden=true;document.body.classList.add('playing');$('intro').hidden=true;$('modal').hidden=true;$('hud').hidden=false;$('touch').hidden=false;$('pause').focus();updateHud();resize();}
 function pause(){
   if(mode!=='running')return;mode='paused';held.clear();$('modal-title').textContent='Garden paused';$('modal-message').textContent='Your seeds can wait. Take a moment, then return to your orbit.';
+  $('score-summary').hidden=true;$('save-status').hidden=true;$('retry-score').hidden=true;
   $('resume').hidden=false;$('modal').hidden=false;$('touch').hidden=true;$('resume').focus();
 }
 function resume(){if(mode!=='paused')return;mode='running';$('modal').hidden=true;$('touch').hidden=false;$('pause').focus();}
+function returnToShed(){
+  if(!['paused','over'].includes(mode))return;
+  game=createGame();mode='ready';held.clear();boardRequest++;
+  $('leaderboard-modal').hidden=true;$('modal').hidden=true;$('hud').hidden=true;$('touch').hidden=true;
+  document.body.classList.remove('playing');$('intro').hidden=false;showBest();resize();$('play').focus();
+}
+async function saveSharedScore(){
+  const run=game,playerId=user?.id;
+  if(mode!=='over'||!run.result||savingRun===run)return;
+  $('save-status').hidden=false;$('retry-score').hidden=true;
+  if(!playerId){$('save-status').textContent=PLATFORM?'Saved on this browser. Sign in before your next run to join the shared leaderboard.':'Local best saved. Shared scores connect on the published start.ng game.';return;}
+  savingRun=run;$('save-status').textContent='Saving your harvest to start.ng…';
+  try{
+    const reply=await submitScore(harvestStats(run),playerId);
+    if(game!==run||user?.id!==playerId)return;
+    if(reply.ok){
+      const rank=reply.result?.rank;
+      $('save-status').textContent=`${reply.result?.improved?'New best harvest saved!':'Harvest saved. Your best run stays on the board.'}${Number.isInteger(rank)?` Your rank: #${rank}.`:''}`;
+    }else{$('save-status').textContent=typeof reply.error==='string'?reply.error:'Your score could not be saved. Please try again.';$('retry-score').hidden=false;}
+  }catch{if(game===run&&user?.id===playerId){$('save-status').textContent='Your score could not be saved. Please try again.';$('retry-score').hidden=false;}}
+  finally{if(savingRun===run)savingRun=null;}
+}
+function openBoard(){
+  if(mode==='running')pause();$('modal').hidden=true;$('leaderboard-modal').hidden=false;
+  $('board-close').textContent=['paused','over'].includes(mode)?'Back to harvest':'Back to shed';
+  $('board-close').focus();loadBoard();
+}
+function closeBoard(){
+  boardRequest++;$('leaderboard-modal').hidden=true;
+  if(['paused','over'].includes(mode)){$('modal').hidden=false;$(mode==='paused'?'resume':'restart').focus();}
+  else $('scores').focus();
+}
+async function loadBoard(){
+  const request=++boardRequest;$('board-refresh').disabled=true;$('board-status').textContent='Loading harvests…';$('board-rows').replaceChildren();$('board-table-wrap').hidden=true;
+  $('board-guest').hidden=!!user;$('board-signin').hidden=!!user||!PLATFORM;
+  try{
+    const reply=await getLeaderboard();if(request!==boardRequest)return;
+    if(!reply.ok||!Array.isArray(reply.entries)){$('board-status').textContent=typeof reply.error==='string'?reply.error:'The leaderboard is unavailable. Please try again.';return;}
+    const entries=reply.entries.slice(0,10);
+    $('board-status').textContent=entries.length?'Best harvests across start.ng. Your row is highlighted.':'No harvests yet. Be the first gardener on the board!';
+    for(const entry of entries){
+      const row=document.createElement('tr'),mine=!!user&&String(entry.player_id)===user.id;
+      if(mine)row.classList.add('own-score');
+      const numeric=value=>Number.isFinite(value)?String(value):'—';
+      const time=entry.stats?.time;
+      const cells=[numeric(entry.rank),`${typeof entry.name==='string'?entry.name:'Gardener'}${mine?' (you)':''}`,numeric(entry.stats?.score??entry.score),numeric(entry.stats?.seeds),Number.isFinite(time)?`${Math.floor(time/60)}:${String(Math.floor(time%60)).padStart(2,'0')}`:'—'];
+      for(const text of cells){const cell=document.createElement('td');cell.textContent=text;row.append(cell);}$('board-rows').append(row);
+    }
+    $('board-table-wrap').hidden=!entries.length;
+  }catch{if(request===boardRequest)$('board-status').textContent='The leaderboard could not be reached. Please try again.';}
+  finally{if(request===boardRequest)$('board-refresh').disabled=false;}
+}
 function finish(){
   mode='over';held.clear();saveBest();$('modal-title').textContent=game.result==='won'?'A beautiful harvest.':game.result==='time'?'The sun has set.':'Even gardeners need a rest.';
   $('modal-message').textContent=`${user?.name??'Gardener'}, you gathered ${game.collected} of ${TARGET} seeds in ${game.elapsed.toFixed(1)} seconds.${game.result==='won'?' Your orchard is in full bloom!':' Switch rings when a pest gets close, or dash straight through.'}`;
   $('resume').hidden=true;$('modal').hidden=false;$('touch').hidden=true;$('restart').focus();
+  $('score-summary').hidden=false;$('score-summary').textContent=`${harvestStats(game).score} harvest points`;
+  saveSharedScore();
 }
 async function refreshUser(){
   const request=++refreshNumber,result=await getUser();if(request!==refreshNumber)return;
   if(!result.available){$('connection').textContent='Account connection unavailable · guest play is still available';return;}
   const changed=(user?.id??null)!==(result.user?.id??null);
   if(changed&&mode==='running')pause();
-  if(changed&&['paused','over'].includes(mode)){mode='ready';held.clear();$('modal').hidden=true;$('intro').hidden=false;$('hud').hidden=true;$('touch').hidden=true;document.body.classList.remove('playing');}
+  if(changed&&['paused','over'].includes(mode))returnToShed();
   user=result.user;hero?.applyStyle(user?.style);$('identity').textContent=user?user.name:'Guest gardener';$('signin').hidden=!PLATFORM||!!user;
   $('connection').textContent=user?'Your start.ng look is growing here. Change your profile, then return to update it.':PLATFORM?'Playing as a guest · sign in to wear your start.ng look':'Local garden · guest play. Your start.ng look connects after deployment.';
-  showBest();if(renderer)resize();
+  showBest();if(renderer)resize();if(!$('leaderboard-modal').hidden)loadBoard();
 }
 function resize(){
   if(!renderer)return;const mobile=innerWidth<700,preview=mode==='ready';renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;
@@ -76,11 +134,13 @@ async function boot(){
 const controls={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'inward',KeyW:'inward',ArrowDown:'outward',KeyS:'outward'};
 function activate(control){if(mode!=='running')return;if(control==='inward')switchRing(game,-1);else if(control==='outward')switchRing(game,1);else held.add(control);}
 addEventListener('keydown',e=>{
-  if(!$('modal').hidden&&e.code==='Tab'){
-    const buttons=[...$('modal').querySelectorAll('button:not([hidden])')];
+  const dialog=!$('leaderboard-modal').hidden?$('leaderboard-modal'):!$('modal').hidden?$('modal'):null;
+  if(dialog&&e.code==='Tab'){
+    const buttons=[...dialog.querySelectorAll('button:not([hidden]):not(:disabled)')];
     const index=buttons.indexOf(document.activeElement);
     e.preventDefault();buttons[(index+(e.shiftKey?-1:1)+buttons.length)%buttons.length].focus();return;
   }
+  if(!$('leaderboard-modal').hidden){if(e.code==='Escape'&&!e.repeat){e.preventDefault();closeBoard();}return;}
   if(e.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
   if(mode==='running'&&(controls[e.code]||e.code==='Space'))e.preventDefault();
   if((e.code==='KeyP'||e.code==='Escape')&&!e.repeat){if(mode==='running')pause();else if(mode==='paused')resume();return;}
@@ -89,6 +149,8 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>held.delete(controls[e.code]));
 for(const button of document.querySelectorAll('[data-control]')){button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);activate(button.dataset.control);});for(const name of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(name,()=>held.delete(button.dataset.control));}
 $('dash-button').onclick=()=>{if(mode==='running')dash(game);};$('play').onclick=start;$('restart').onclick=start;$('pause').onclick=pause;$('resume').onclick=resume;$('signin').onclick=signIn;
+$('shed').onclick=returnToShed;$('scores').onclick=openBoard;$('scores-results').onclick=openBoard;
+$('board-close').onclick=closeBoard;$('board-refresh').onclick=loadBoard;$('board-signin').onclick=signIn;$('retry-score').onclick=saveSharedScore;
 addEventListener('resize',resize);addEventListener('blur',()=>{held.clear();pause();});document.addEventListener('visibilitychange',()=>{if(document.hidden){held.clear();pause();}else refreshUser();});addEventListener('focus',()=>refreshUser());
 $('signin').hidden=!PLATFORM;
 showBest();boot().catch(error=>{console.error(error);$('play').disabled=true;$('play').textContent='Garden unavailable';$('render-status').hidden=false;$('render-status').textContent='The 3D garden could not load. Check your internet connection and WebGL support, then refresh.';});
