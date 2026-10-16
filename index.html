@@ -1,31 +1,16 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#102e29">
-    <meta name="description" content="Orbit Orchard — a floating garden adventure built with Three.js for start.ng.">
-    <title>Orbit Orchard</title>
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="./src/styles.css">
-    <script type="importmap">
-      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
-    </script>
-  </head>
-  <body>
-    <canvas id="garden" aria-label="A preview of Orbit Orchard's floating garden"></canvas>
-    <header class="masthead">
-      <a class="brand" href="./"><span class="brand-icon" aria-hidden="true">✳</span> orbit orchard</a>
-      <span class="badge">A THREE.JS GARDEN ADVENTURE</span>
-    </header>
-    <main class="intro">
-      <p class="eyebrow"><span></span> SOMETHING GOOD IS GROWING</p>
-      <h1>A little orbit.<br>A wild <em>harvest.</em></h1>
-      <p class="description">A floating garden. A handful of glowing seeds. And a few uninvited visitors. Your next little adventure is taking root.</p>
-      <div class="status"><span class="status-dot"></span><div><strong>Garden preview</strong><p>The world is ready. Gameplay is coming next.</p></div></div>
-      <p id="render-status" class="render-status" role="status"></p>
-    </main>
-    <footer><span>GROWN FOR START.NG</span><span>01 / THE SEEDLING</span></footer>
-    <script type="module" src="./src/main.js"></script>
-  </body>
-</html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102e29">
+<meta name="description" content="Harvest glowing seeds across three floating garden rings. A Three.js game for start.ng.">
+<title>Orbit Orchard</title><link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./src/styles.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+</head><body>
+<canvas id="garden" aria-label="Orbit Orchard's three circular garden paths"></canvas>
+<header class="masthead"><a class="brand" href="./"><span class="brand-icon">✳</span> orbit orchard</a><div class="account"><span id="identity">Guest gardener</span><a href="https://start.ng/" target="_blank" rel="noopener">Your look ↗</a><button id="signin" hidden>Sign in</button></div></header>
+<section id="hud" class="game-hud" hidden aria-label="Game status">
+<div><span>HARVEST</span><strong id="harvest">0 / 18</strong></div><div><span>TIME</span><strong id="time">75s</strong></div><div><span>HEALTH</span><strong id="health">♥ ♥ ♥</strong></div><div><span>DASH</span><strong id="dash-status">Ready</strong></div><button id="pause" aria-label="Pause game">Ⅱ</button></section>
+<main id="intro" class="intro"><p class="eyebrow"><span></span> A SMALL WORLD. A WILD HARVEST.</p><h1>A little orbit.<br>A wild <em>harvest.</em></h1><p class="description">Gather 18 glowing seeds across three garden rings before sunset. Dodge the wandering pests. Make this little world bloom.</p><button id="play" class="primary" disabled>Growing your garden…</button><p id="connection" class="connection" role="status">Local garden · playing as a guest</p><div class="instructions"><p><kbd>←</kbd> <kbd>→</kbd> Circle the garden</p><p><kbd>↑</kbd> <kbd>↓</kbd> Switch rings</p><p><kbd>Space</kbd> Dash through pests · <kbd>P</kbd> Pause</p><p>WASD also works. Touch controls appear on phones.</p></div><p class="best">PERSONAL BEST <strong id="best">—</strong></p></main>
+<section id="modal" class="modal" hidden aria-labelledby="modal-title" role="dialog" aria-modal="true"><div class="panel"><p class="eyebrow">TAKE A BREATH, GARDENER</p><h2 id="modal-title">Garden paused</h2><p id="modal-message"></p><button id="resume" class="primary">Keep growing</button><button id="restart" class="secondary">Start a new harvest</button></div></section>
+<div id="touch" class="touch-controls" hidden aria-label="Touch controls"><div class="direction-pad"><button data-control="inward" aria-label="Move to inner ring">↑</button><button data-control="left" aria-label="Circle left">←</button><button data-control="right" aria-label="Circle right">→</button><button data-control="outward" aria-label="Move to outer ring">↓</button></div><button id="dash-button" class="dash-button">DASH</button></div>
+<p id="render-status" class="error-banner" role="alert" hidden></p><footer><span>GROWN FOR START.NG</span><span>THREE RINGS. ONE LITTLE ADVENTURE.</span></footer>
+<script type="module" src="./src/main.js"></script></body></html>

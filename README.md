@@ -1,62 +1,83 @@
 # Orbit Orchard
 
-A Three.js game for start.ng: guide your character around a floating garden, collect glowing seeds, and avoid roaming hazards before time runs out.
+A Three.js garden game for start.ng. Circle three paths on a floating island, collect all 18 glowing seeds within 75 seconds, and avoid wandering pests. You have three hearts and a short protective dash that recharges in 3.2 seconds.
 
-## Current milestone: base project
+This is an original circular exploration game, distinct from the platform's Lane Dash runner example.
 
-Included: responsive introduction, animated Three.js garden preview, placeholder character, local development server, and GitHub-ready project structure.
+## Play locally
 
-**This milestone is a visual scaffold, not a playable game.** Movement, collision detection, scoring, mobile controls, and start.ng login/appearance integration are next, after the initial GitHub push.
-
-## Run locally
-
-Install Node.js 20 or newer, then run:
+Use Node.js 20 or newer:
 
 ```sh
 npm run dev
 ```
 
-Open http://localhost:5173. No npm dependency installation or build is required. Internet access is required for Three.js from jsDelivr and optional Google Fonts. Serve the project over HTTP rather than opening index.html directly.
+Open **http://localhost:5173**. No dependency installation or build is needed. Three.js is pinned to version 0.160.0 through a jsDelivr import map; internet access is required. Google Fonts are optional and have system fallbacks. Open over HTTP, not directly as a file.
+
+## Controls
+
+| Action | Keyboard | Phone |
+| --- | --- | --- |
+| Circle left/right | Left/right arrows or A/D | Hold left/right buttons |
+| Switch inner/outer ring | Up/down arrows or W/S | Tap up/down buttons |
+| Dash through pests | Space | Dash button |
+| Pause/resume | P or Escape | Pause / Keep growing |
+
+The game pauses when the tab loses focus. A hit gives brief protection against repeated hits. Restart resets the entire harvest. Personal bests are stored in this browser separately for each start.ng user (and for guests); these are local records, not a shared leaderboard.
+
+## start.ng identity and central styling
+
+`src/platform.js` implements the public connection protocol demonstrated by https://lanedash.start.ng/src/platform.js:
+
+1. On a `*.start.ng` host, load a hidden `https://start.ng/connect` frame.
+2. Send `startng:whoami` with a unique request ID.
+3. Accept `startng:user` only from the correct origin, iframe window, and request ID. The returned user provides `{ id, name, style }`.
+4. Sign in at `https://start.ng/?return_to=...` and return to the game.
+5. Recheck when the tab becomes visible or receives focus. Timeouts preserve an already known user; the game stays playable when the platform is unavailable.
+
+The game never requests a user's password or handles a start.ng token. Untrusted names are rendered with `textContent`. If the account changes during a harvest, that run is discarded and the new account starts fresh.
+
+`src/character.js` applies body, primary/secondary clothing colour, skin colour, hair colour, all seven demonstrated hairstyles, all five hat settings, and all six accessory settings. Change your appearance on start.ng and return to the game tab to refresh your character. Invalid colour values use defaults.
+
+Localhost and other hosts provide guest play. Real account login and profile styling **must be verified on the deployed start.ng subdomain**; local tests do not prove live platform access.
+
+## Checks
 
 ```sh
 npm run check
+npm test
 ```
 
-This checks JavaScript syntax; it does not validate browser rendering or gameplay.
+The automated tests cover collection, ring movement, collision grace, dash protection and cooldown, win/loss, a complete harvest route, and account message validation.
 
-## GitHub setup
-
-Create an **empty public repository** named `orbit-orchard` on GitHub. Do not add a README, license, or gitignore there; the project already contains its initial files. From this project directory, run:
+An optional real Edge smoke check uses no npm dependencies:
 
 ```sh
-git init
-git add .
-git commit -m "Set up Orbit Orchard Three.js base project"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/orbit-orchard.git
-git push -u origin main
+npm run test:browser
 ```
 
-Replace `YOUR-USERNAME` with your GitHub username. After pushing, share the repository URL to continue development.
+It requires Microsoft Edge installed at its usual Windows location (or set `EDGE_PATH`), and available local ports 5187 and 9223. It starts its own local server and isolated headless profile, checks movement/collection, pause/resume, restart, and phone layout, and saves ignored screenshots under `.browser-check/`. It shuts down the browser and server after the check.
 
-## Publishing to start.ng
+## Publish
 
-The dashboard accepts a public GitHub repository URL under **Your games** and assigns a start.ng address. This project has an index.html at the repository root and uses relative asset URLs, following the public Lane Dash example's static structure. Platform submission/build requirements still need to be checked during deployment.
+Repository: https://github.com/HAFEEZAH029/orbit-orchard
 
-Publish for final acceptance after gameplay and platform integration are ready. A GitHub push alone does not publish the game on start.ng.
+1. Review and commit the finished changes, then push to `main`.
+2. Sign in at start.ng and paste the public repository URL into **Your games**.
+3. Follow any submission instructions and open the assigned start.ng address.
+4. Verify that your name appears, the full harvest works, and keyboard and touch controls behave correctly.
+5. Change clothing colour, hair, hat, and accessory centrally on start.ng. Return to the game and confirm the changes appear. Verify sign-out and a second account if available.
 
-## Planned platform integration
+The project has `index.html` at its root, relative asset URLs, and no build step, following the example game's static layout. Confirm any platform-specific submission requirements in the dashboard. Pushing to GitHub alone does not publish on start.ng. No deployment or GitHub credentials belong in the source.
 
-The public reference at https://lanedash.start.ng/src/platform.js uses a hidden https://start.ng/connect iframe and origin-checked postMessage requests (`startng:whoami` / `startng:user`) to receive `{ id, name, style }`. It redirects to start.ng for sign-in and rechecks when the tab regains focus. This integration is **not implemented yet**.
+## Source
 
-The character will reflect profile settings such as primary/secondary colour, skin/hair colour, body, hairstyle, hat, and accessory. Verify real login and profile appearance on the deployed start.ng subdomain; local preview will use clearly labelled development data.
+- `index.html`, `src/styles.css` — accessible menus, HUD, responsive styling, touch controls
+- `src/main.js` — Three.js world, rendering, input, game lifecycle, local bests
+- `src/game-state.js` — frame-independent gameplay rules
+- `src/platform.js` — account bridge with timeouts and message validation
+- `src/character.js` — profile-driven 3D character
+- `scripts/serve.mjs` — local server using Node built-ins
+- `tests/` — gameplay and platform security checks
 
-## Files
-
-- `index.html` — page shell and Three.js import map
-- `src/styles.css` — responsive visual design
-- `src/main.js` — animated garden scaffold
-- `scripts/serve.mjs` — local static server using Node built-ins
-- `favicon.svg` — project icon
-
-No credentials are required for the base project. Never commit account tokens or passwords.
+Three.js is provided under its upstream MIT license: https://github.com/mrdoob/three.js/blob/r160/LICENSE

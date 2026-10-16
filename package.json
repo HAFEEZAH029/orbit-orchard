@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "check": "node --check src/main.js && node --check scripts/serve.mjs"
+    "check": "node --check src/main.js && node --check src/character.js && node --check src/platform.js && node --check src/game-state.js && node --check scripts/serve.mjs && node --check scripts/browser-check.mjs",
+    "test": "node --test",
+    "test:browser": "node scripts/browser-check.mjs"
   },
   "engines": { "node": ">=20" }
 }
