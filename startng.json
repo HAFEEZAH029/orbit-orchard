@@ -1,0 +1,9 @@
+{
+  "leaderboard": {
+    "stats": [
+      { "key": "score", "label": "Harvest points", "order": "highest", "format": "number" },
+      { "key": "seeds", "label": "Seeds gathered", "order": "highest", "format": "number" },
+      { "key": "time", "label": "Harvest time", "order": "lowest", "format": "time" }
+    ]
+  }
+}

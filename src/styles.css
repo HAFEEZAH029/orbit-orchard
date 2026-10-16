@@ -69,3 +69,27 @@ kbd { display: inline-block; font: inherit; border: 1px solid #ffffff30; backgro
   .playing footer { display: none; }
 }
 @media (max-height: 550px) and (orientation: landscape) { .game-hud { top: 65px; padding: 7px 14px; } .masthead { padding: 12px 5vw; } .touch-controls { bottom: 12px; } .playing footer { display: none; } }
+
+.panel { max-height: calc(100svh - 40px); overflow-y: auto; }
+.save-status { font-size: 12px !important; color: #d8ef8d !important; }
+#score-summary { font-size: 24px; font-weight: 700; color: #d8ef8d; margin-bottom: 8px; }
+.board-panel { width: min(660px,100%); padding: 28px; }
+.board-panel h2 { margin: 18px 0; }
+.board-rules, #board-status { font-size: 12px !important; line-height: 1.7; }
+.board-table-wrap { overflow-x: auto; margin: 20px 0; }
+.board-table-wrap table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-variant-numeric: tabular-nums; }
+.board-table-wrap th { color: #bdcea6; font-size: 10px; text-transform: uppercase; letter-spacing: .7px; }
+.board-table-wrap td, .board-table-wrap th { padding: 12px 8px; border-bottom: 1px solid #ffffff15; }
+.board-table-wrap td:nth-child(2) { overflow-wrap: anywhere; max-width: 220px; }
+.board-table-wrap .own-score { background: #d8ef8d18; color: #e3f5ac; }
+.board-actions { display: flex; justify-content: center; gap: 12px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+.board-actions .primary { margin-top: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 700px) {
+  .masthead { flex-wrap: wrap; gap: 8px; }
+  .account { flex-wrap: wrap; gap: 8px; }
+  .account button { font-size: 10px; padding: 8px 10px; }
+  .game-hud { top: 110px; }
+  .board-panel { padding: 20px 14px; }
+  .board-table-wrap td, .board-table-wrap th { padding: 10px 5px; font-size: 11px; }
+}
