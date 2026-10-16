@@ -1,0 +1,13 @@
+{
+  "name": "orbit-orchard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A floating garden game built with Three.js for start.ng",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "start": "node scripts/serve.mjs",
+    "check": "node --check src/main.js && node --check scripts/serve.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

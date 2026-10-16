@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#102e29">
+    <meta name="description" content="Orbit Orchard — a floating garden adventure built with Three.js for start.ng.">
+    <title>Orbit Orchard</title>
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./src/styles.css">
+    <script type="importmap">
+      { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    </script>
+  </head>
+  <body>
+    <canvas id="garden" aria-label="A preview of Orbit Orchard's floating garden"></canvas>
+    <header class="masthead">
+      <a class="brand" href="./"><span class="brand-icon" aria-hidden="true">✳</span> orbit orchard</a>
+      <span class="badge">A THREE.JS GARDEN ADVENTURE</span>
+    </header>
+    <main class="intro">
+      <p class="eyebrow"><span></span> SOMETHING GOOD IS GROWING</p>
+      <h1>A little orbit.<br>A wild <em>harvest.</em></h1>
+      <p class="description">A floating garden. A handful of glowing seeds. And a few uninvited visitors. Your next little adventure is taking root.</p>
+      <div class="status"><span class="status-dot"></span><div><strong>Garden preview</strong><p>The world is ready. Gameplay is coming next.</p></div></div>
+      <p id="render-status" class="render-status" role="status"></p>
+    </main>
+    <footer><span>GROWN FOR START.NG</span><span>01 / THE SEEDLING</span></footer>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
